@@ -1,0 +1,34 @@
+#!/usr/bin/python
+from collections import defaultdict
+from sys import argv
+assert argv[1] == '-K'
+token = argv[2]
+log = argv[-1]
+assert log.isalnum()
+on_site = {'-E':[], '-G':[]}
+rooms = defaultdict(list)
+folks = defaultdict(list)
+
+for line in open(log):
+	_timestamp, al, eg, name, room_id = line.split()
+	room = room_id=='None'
+	group = on_site[eg]
+	if al == '-A':
+		if room: group += [name]
+		else:
+			rooms[room_id] += [name]
+			folks[name] += [room_id]
+	else:
+		if room: group.remove(name)
+		else: rooms[room_id].remove(name)
+
+assert argv[3] in ('-S','-R')
+if argv[3] == '-S':
+	for group in on_site.values():
+		print ','.join(sorted(group))
+	for room_id in rooms:
+		print room_id+':', ','.join(sorted(rooms[room_id]))
+else:
+	assert argv[4] in ('-E','-G')
+	name = argv[5]
+	print ','.join(folks[name])
