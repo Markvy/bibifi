@@ -1,15 +1,23 @@
 #!/usr/bin/python
 from collections import defaultdict
+from hmac import HMAC
 from sys import argv
+
 assert argv[1] == '-K'
 token = argv[2]
 log = argv[-1]
 assert log.isalnum()
+f = open(log)
+mac = f.readline().strip()
+assert HMAC(token, f.read()).hexdigest() == mac
+
 on_site = {'-E':[], '-G':[]}
 rooms = defaultdict(list)
 folks = defaultdict(list)
 
-for line in open(log):
+f = open(log)
+f.next()
+for line in f:
 	_timestamp, al, eg, name, room_id = line.split()
 	room = room_id=='None'
 	group = on_site[eg]
