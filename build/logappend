@@ -1,8 +1,10 @@
 #!/usr/bin/python
 from sys import argv
 from hmac import HMAC
+from hashlib import md5
+from Crypto.Cipher.AES import AESCipher, MODE_CFB
 def append():
-	room = None
+	room_id = '-'
 	i = 0
 	while i < len(argv) - 2:
 		i += 1
@@ -18,11 +20,11 @@ def append():
 			name = nxt
 			i += 1
 		elif cur == '-R':
-			room = nxt
+			room_id = nxt
 			i += 1
     		else:
-			assert argv[i] in ('-A','-L')
-			al = argv[i]
+			assert cur in ('-A','-L')
+			al = cur
 	log = argv[-1]
 	assert log.isalnum()
 	try: f = open(log)
@@ -31,7 +33,12 @@ def append():
 		f = open(log)
 	mac = f.readline().strip()
 	assert HMAC(token, f.read()).hexdigest() == mac
-	print >> open(log, 'a'), timestamp, al, eg, name, room
+	key = md5(token).digest()
+	iv = md5(log+'-'+timestamp).digest()
+	cipher = AESCipher(key, MODE_CFB, iv)
+	encrypt = lambda x: cipher.encrypt(x).encode('hex')
+	al, eg, room_id, name = map(encrypt, [al, eg, room_id, name])
+	print >> open(log, 'a'), timestamp, al, eg, room_id, name
 	f = open(log)
 	f.readline()
 	print >> open(log, 'r+'), HMAC(token, f.read()).hexdigest()

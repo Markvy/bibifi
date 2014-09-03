@@ -1,10 +1,13 @@
 #!/usr/bin/python
-from collections import defaultdict
-from hmac import HMAC
 from sys import argv
+from hmac import HMAC
+from hashlib import md5
+from collections import defaultdict
+from Crypto.Cipher.AES import AESCipher, MODE_CFB
 
 assert argv[1] == '-K'
 token = argv[2]
+key = md5(token).digest()
 log = argv[-1]
 assert log.isalnum()
 f = open(log)
@@ -18,8 +21,12 @@ folks = defaultdict(list)
 f = open(log)
 f.next()
 for line in f:
-	_timestamp, al, eg, name, room_id = line.split()
-	room = room_id=='None'
+	timestamp, al, eg, room_id, name = line.split()
+	iv = md5(log+'-'+timestamp).digest()
+	cipher = AESCipher(key, MODE_CFB, iv)
+	decrypt = lambda x: cipher.decrypt(x.decode('hex'))
+	al, eg, room_id, name = map(decrypt, [al, eg, room_id, name])
+	room = room_id=='-'
 	group = on_site[eg]
 	if al == '-A':
 		if room: group += [name]
@@ -30,13 +37,15 @@ for line in f:
 		if room: group.remove(name)
 		else: rooms[room_id].remove(name)
 
+def csv(L): return ','.join(sorted(L))
+
 assert argv[3] in ('-S','-R')
 if argv[3] == '-S':
-	for group in on_site.values():
-		print ','.join(sorted(group))
+	print csv(on_site['-E'])
+	print csv(on_site['-G'])
 	for room_id in rooms:
-		print room_id+':', ','.join(sorted(rooms[room_id]))
+		print room_id+':', csv(rooms[room_id])
 else:
 	assert argv[4] in ('-E','-G')
 	name = argv[5]
-	print ','.join(folks[name])
+	print csv(folks[name])
