@@ -36,8 +36,7 @@ def append():
 	key = md5(token).digest()
 	iv = md5(log+'-'+timestamp).digest()
 	cipher = AESCipher(key, MODE_CFB, iv)
-	encrypt = lambda x: cipher.encrypt(x).encode('hex')
-	al, eg, room_id, name = map(encrypt, [al, eg, room_id, name])
+	al, eg, room_id, name = [cipher.encrypt(x).encode('hex') for x in al, eg, room_id, name]
 	print >> open(log, 'a'), timestamp, al, eg, room_id, name
 	f = open(log)
 	f.readline()

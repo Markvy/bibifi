@@ -24,8 +24,7 @@ for line in f:
 	timestamp, al, eg, room_id, name = line.split()
 	iv = md5(log+'-'+timestamp).digest()
 	cipher = AESCipher(key, MODE_CFB, iv)
-	decrypt = lambda x: cipher.decrypt(x.decode('hex'))
-	al, eg, room_id, name = map(decrypt, [al, eg, room_id, name])
+	al, eg, room_id, name = [cipher.decrypt(x.decode('hex')) for x in al, eg, room_id, name]
 	room = room_id=='-'
 	group = on_site[eg]
 	if al == '-A':
@@ -43,9 +42,10 @@ assert argv[3] in ('-S','-R')
 if argv[3] == '-S':
 	print csv(on_site['-E'])
 	print csv(on_site['-G'])
-	for room_id in rooms:
-		print room_id+':', csv(rooms[room_id])
+	for room_id in sorted(rooms, key=int):
+		if len(rooms[room_id]) > 0:
+			print room_id+':', csv(rooms[room_id])
 else:
 	assert argv[4] in ('-E','-G')
 	name = argv[5]
-	print csv(folks[name])
+	print ','.join(folks[name])
