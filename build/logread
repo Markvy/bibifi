@@ -19,6 +19,13 @@ rooms = defaultdict(list)
 folks = defaultdict(list)
 timer = defaultdict(lambda: [None,0])
 
+mode = argv[3]
+assert mode in ('-S','-R','-I','-T','-A')
+if mode == '-A':
+	assert argv[4:8:2] == ['-L', '-U']
+	record = map(int, argv[5:8:2])
+	recording = False
+
 f = open(log)
 f.next()
 for line in f:
@@ -29,6 +36,11 @@ for line in f:
 	timestamp = int(timestamp)
 	no_room = room_id=='-'
 	group = on_site[eg]
+	if mode == '-A':
+		if timestamp == record[0]:
+			ans = set(on_site['-E'])
+		if record[0] < timestamp <= record[1]:
+			ans &= set(on_site['-E'])
 	if al == '-A':
 		if no_room:
 			group += [name]
@@ -46,19 +58,20 @@ for line in f:
 
 def csv(L): return ','.join(sorted(L))
 
-assert argv[3] in ('-S','-R','-I','-T')
-if argv[3] == '-S':
+if mode == '-S':
 	print csv(on_site['-E'])
 	print csv(on_site['-G'])
 	for room_id in sorted(rooms, key=int):
 		if len(rooms[room_id]) > 0:
 			print room_id+':', csv(rooms[room_id])
-elif argv[3] == '-R':
+elif mode == '-R':
 	assert argv[4] in ('-E','-G')
 	print ','.join(folks[argv[5]])
-elif argv[3] == '-I':
+elif mode == '-I':
 	print csv(set.intersection(*(set(folks[name]) for name in argv[5:-1:2])))
-elif argv[3] == '-T':
+elif mode == '-T':
 	assert argv[4] in ('-E','-G')
 	print timer[argv[5]][1]
+elif mode == '-A':
+	print csv(ans)
 else: assert False
