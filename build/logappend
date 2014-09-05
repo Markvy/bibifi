@@ -31,8 +31,14 @@ def append():
 	except IOError:
 		print >> open(log, 'w'), HMAC(token, '').hexdigest()
 		f = open(log)
+		new_file = True
+	else: new_file = False
 	mac = f.readline().strip()
-	assert HMAC(token, f.read()).hexdigest() == mac
+	data = f.read()
+	assert HMAC(token, data).hexdigest() == mac
+	if not new_file and int(data.splitlines()[-1].split()[0]) >= int(timestamp):
+		print 'invalid'
+		return -1
 	key = md5(token).digest()
 	iv = md5(log+'-'+timestamp).digest()
 	cipher = AESCipher(key, MODE_CFB, iv)
@@ -42,7 +48,7 @@ def append():
 	f.readline()
 	print >> open(log, 'r+'), HMAC(token, f.read()).hexdigest()
 
-if argv[1] != '-B': append()
+if argv[1] != '-B': exit(append())
 else:
 	for line in open(argv[2]):
 		argv[1:] = line.split()
