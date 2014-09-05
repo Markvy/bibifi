@@ -17,35 +17,48 @@ assert HMAC(token, f.read()).hexdigest() == mac
 on_site = {'-E':[], '-G':[]}
 rooms = defaultdict(list)
 folks = defaultdict(list)
+timer = defaultdict(lambda: [None,0])
 
 f = open(log)
 f.next()
 for line in f:
 	timestamp, al, eg, room_id, name = line.split()
 	iv = md5(log+'-'+timestamp).digest()
+	timestamp = int(timestamp)
 	cipher = AESCipher(key, MODE_CFB, iv)
 	al, eg, room_id, name = [cipher.decrypt(x.decode('hex')) for x in al, eg, room_id, name]
-	room = room_id=='-'
+	no_room = room_id=='-'
 	group = on_site[eg]
 	if al == '-A':
-		if room: group += [name]
+		if no_room:
+			group += [name]
+			timer[name][0] = timestamp
 		else:
 			rooms[room_id] += [name]
 			folks[name] += [room_id]
 	else:
-		if room: group.remove(name)
+		if no_room:
+			group.remove(name)
+			t = timer[name]
+			t[1] += timestamp - t[0]
+			t[0] = None
 		else: rooms[room_id].remove(name)
 
 def csv(L): return ','.join(sorted(L))
 
-assert argv[3] in ('-S','-R')
+assert argv[3] in ('-S','-R','-I','-T')
 if argv[3] == '-S':
 	print csv(on_site['-E'])
 	print csv(on_site['-G'])
-	for room_id in sorted(rooms, key=int):
+	for room_id in sorted(rooms):
 		if len(rooms[room_id]) > 0:
 			print room_id+':', csv(rooms[room_id])
-else:
+elif argv[3] == '-R':
 	assert argv[4] in ('-E','-G')
-	name = argv[5]
-	print ','.join(folks[name])
+	print ','.join(folks[argv[5]])
+elif argv[3] == '-I':
+	print csv(set.intersection(*(set(folks[name]) for name in argv[5:-1:2])))
+elif argv[3] == '-T':
+	assert argv[4] in ('-E','-G')
+	print timer[argv[5]][1]
+else: assert False
