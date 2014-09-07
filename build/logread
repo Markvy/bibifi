@@ -26,7 +26,7 @@ else:
 	assert argv[4:8:2] == ['-L', '-U']
 	include = set()
 	temp = 1 if mode == '-A' else 2
-	stop_at = 8 + 2*(temp - 1)
+	stop_at = 8 + 4*(temp - 1)
 	rec_at = map(int, argv[5:stop_at:2])
 	rec_at = zip(rec_at[::2], rec_at[1::2])
 	rec_ing = [False]*temp
@@ -58,6 +58,7 @@ for line in f:
 		else: rooms[room_id].remove(name)
 	if mode in ('-A','-B'):
 		for i,(start,stop) in enumerate(rec_at):
+                        #print i, start, stop
 			if not rec_ing[i] and timestamp >= start:
 				ans[i] = set(on_site['-E'])
 				rec_ing[i] = True
@@ -81,8 +82,7 @@ elif mode == '-T':
 	assert argv[4] in ('-E','-G')
 	print timer[argv[5]][1]
 elif mode == '-A':
-	print csv(ans)
+	print csv(ans[0])
 elif mode == '-B':
 	print csv(ans[0] - ans[1])
-	print ans
 else: assert False
