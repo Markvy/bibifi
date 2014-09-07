@@ -68,7 +68,7 @@ for line in f:
                         elif start <= timestamp <= stop:
                                 ans[i] |= set(on_site['-E'])
 
-def csv(header, L): return ','.join(sorted(L))
+def csv(header, L=''): return ','.join(sorted(L))
 def htm(header, L):
         ans = '<html><body><table><tr><th>'+header+'</th></tr>'
         for item in sorted(L): ans += '<tr><td>'+item+'</td></tr>\n'
