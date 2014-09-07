@@ -19,70 +19,76 @@ rooms = defaultdict(list)
 folks = defaultdict(list)
 timer = defaultdict(lambda: [None,0])
 
+html = argv[3] == '-H'
+if html: del argv[3]
+
 mode = argv[3]
 assert mode in ('-S','-R','-I','-T','-A','-B')
 if mode not in ('-A','-B'): rec_at = rec_ing = []
 else:
-	assert argv[4:8:2] == ['-L', '-U']
-	include = set()
-	temp = 1 if mode == '-A' else 2
-	stop_at = 8 + 4*(temp - 1)
-	rec_at = map(int, argv[5:stop_at:2])
-	rec_at = zip(rec_at[::2], rec_at[1::2])
-	rec_ing = [False]*temp
-	ans = [set() for i in range(temp)]
+        assert argv[4:8:2] == ['-L', '-U']
+        include = set()
+        temp = 1 if mode == '-A' else 2
+        stop_at = 8 + 4*(temp - 1)
+        rec_at = map(int, argv[5:stop_at:2])
+        rec_at = zip(rec_at[::2], rec_at[1::2])
+        rec_ing = [False]*temp
+        ans = [set() for i in range(temp)]
 
 f = open(log)
 f.next()
 for line in f:
-	timestamp, al, eg, room_id, name = line.split()
-	iv = md5(log+'-'+timestamp).digest()
-	cipher = AESCipher(key, MODE_CFB, iv)
-	al, eg, room_id, name = [cipher.decrypt(x.decode('hex')) for x in al, eg, room_id, name]
-	timestamp = int(timestamp)
-	no_room = room_id=='-'
-	group = on_site[eg]
-	if al == '-A':
-		if no_room:
-			group += [name]
-			timer[name][0] = timestamp
-		else:
-			rooms[room_id] += [name]
-			folks[name] += [room_id]
-	else:
-		if no_room:
-			group.remove(name)
-			t = timer[name]
-			t[1] += timestamp - t[0]
-			t[0] = None
-		else: rooms[room_id].remove(name)
-	if mode in ('-A','-B'):
-		for i,(start,stop) in enumerate(rec_at):
+        timestamp, al, eg, room_id, name = line.split()
+        iv = md5(log+'-'+timestamp).digest()
+        cipher = AESCipher(key, MODE_CFB, iv)
+        al, eg, room_id, name = [cipher.decrypt(x.decode('hex')) for x in al, eg, room_id, name]
+        timestamp = int(timestamp)
+        no_room = room_id=='-'
+        group = on_site[eg]
+        if al == '-A':
+                if no_room:
+                        group += [name]
+                        timer[name][0] = timestamp
+                else:
+                        rooms[room_id] += [name]
+                        folks[name] += [room_id]
+        else:
+                if no_room:
+                        group.remove(name)
+                        t = timer[name]
+                        t[1] += timestamp - t[0]
+                        t[0] = None
+                else: rooms[room_id].remove(name)
+        if mode in ('-A','-B'):
+                for i,(start,stop) in enumerate(rec_at):
                         #print i, start, stop
-			if not rec_ing[i] and timestamp >= start:
-				ans[i] = set(on_site['-E'])
-				rec_ing[i] = True
-			elif start <= timestamp <= stop:
-				ans[i] |= set(on_site['-E'])
+                        if not rec_ing[i] and timestamp >= start:
+                                ans[i] = set(on_site['-E'])
+                                rec_ing[i] = True
+                        elif start <= timestamp <= stop:
+                                ans[i] |= set(on_site['-E'])
 
-def csv(L): return ','.join(sorted(L))
+def csv(header, L): return ','.join(sorted(L))
+def htm(header, L):
+        ans = '<html><body><table><tr><th>'+header+'</th></tr>'
+        for item in sorted(L): ans += '<tr><td>'+item+'</td></tr>\n'
+        return ans + '</table></body></html>'
+
+fmt = [csv,htm][html]
 
 if mode == '-S':
-	print csv(on_site['-E'])
-	print csv(on_site['-G'])
-	for room_id in sorted(rooms, key=int):
-		if len(rooms[room_id]) > 0:
-			print room_id+':', csv(rooms[room_id])
+        print csv(on_site['-E'])
+        print csv(on_site['-G'])
+        for room_id in sorted(rooms, key=int):
+                if len(rooms[room_id]) > 0:
+                        print room_id+':', csv(rooms[room_id])
 elif mode == '-R':
-	assert argv[4] in ('-E','-G')
-	print ','.join(folks[argv[5]])
-elif mode == '-I':
-	print csv(set.intersection(*(set(folks[name]) for name in argv[5:-1:2])))
+        assert argv[4] in ('-E','-G')
+        print ','.join(folks[argv[5]])
+elif mode == '-I': print fmt('Rooms', set.intersection(*(set(folks[name]) for name in argv[5:-1:2])))
 elif mode == '-T':
-	assert argv[4] in ('-E','-G')
-	print timer[argv[5]][1]
-elif mode == '-A':
-	print csv(ans[0])
-elif mode == '-B':
-	print csv(ans[0] - ans[1])
+        assert argv[4] in ('-E','-G')
+        print timer[argv[5]][1]
+elif mode == '-A': print fmt('Employees', ans[0])
+elif mode == '-B': print fmt('Employees', ans[0] - ans[1])
 else: assert False
