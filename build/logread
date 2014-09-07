@@ -68,7 +68,7 @@ for line in f:
                         elif start <= timestamp <= stop:
                                 ans[i] |= set(on_site['-E'])
 
-def csv(header, L=''): return ','.join(sorted(L))
+def csv(header, L): return ','.join(sorted(L))
 def htm(header, L):
         ans = '<html><body><table><tr><th>'+header+'</th></tr>'
         for item in sorted(L): ans += '<tr><td>'+item+'</td></tr>\n'
@@ -77,11 +77,11 @@ def htm(header, L):
 fmt = [csv,htm][html]
 
 if mode == '-S':
-        print csv(on_site['-E'])
-        print csv(on_site['-G'])
+        print csv('', on_site['-E'])
+        print csv('', on_site['-G'])
         for room_id in sorted(rooms, key=int):
                 if len(rooms[room_id]) > 0:
-                        print room_id+':', csv(rooms[room_id])
+                        print room_id+':', csv('', rooms[room_id])
 elif mode == '-R':
         assert argv[4] in ('-E','-G')
         print ','.join(folks[argv[5]])
