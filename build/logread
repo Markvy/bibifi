@@ -68,21 +68,21 @@ for line in f:
       elif start <= timestamp <= stop:
         ans[i] |= set(on_site['-E'])
 
-def csv(header, L): return ','.join(sorted(L))
+def csv(header, L): return ','.join(L)
 def htm(header, L):
   ans = '<html><body><table><tr><th>'+header+'</th></tr>'
-  for item in sorted(L): ans += '<tr><td>'+item+'</td></tr>\n'
+  for item in L: ans += '<tr><td>'+item+'</td></tr>\n'
   return ans + '</table></body></html>'
 
 fmt = [csv,htm][html]
 
 if mode == '-S':
   if not html:
-    print csv('', on_site['-E'])
-    print csv('', on_site['-G'])
+    print csv('', sorted(on_site['-E']))
+    print csv('', sorted(on_site['-G']))
     for room_id in sorted(rooms, key=int):
       if len(rooms[room_id]) > 0:
-        print room_id+':', csv('', rooms[room_id])
+        print room_id+':', csv('', sorted(rooms[room_id]))
   else:
     print '<html><body><table><tr><th>Employee</th><th>Guest</th></tr>'
     for emp, guest in izip_longest(on_site['-E'], on_site['-G'], fillvalue=''):
@@ -90,15 +90,16 @@ if mode == '-S':
     print '</table><table><tr><th>Room ID</th><th>Occupants</th></tr>'
     for room_id in sorted(rooms, key=int):
       if len(rooms[room_id]) > 0:
-        print '<tr><td>'+room_id+'</td><td>'+csv('', rooms[room_id])+'</td></tr>'
+        print '<tr><td>'+room_id+'</td><td>'+csv('', sorted(rooms[room_id]))+'</td></tr>'
     print '</table></body></html>'
 elif mode == '-R':
   assert argv[4] in ('-E','-G')
-  print ','.join(folks[argv[5]])
-elif mode == '-I': print fmt('Rooms', set.intersection(*(set(folks[name]) for name in argv[5:-1:2])))
+  print fmt('Rooms', folks[argv[5]])
+elif mode == '-I':
+  print fmt('Rooms', sorted(set.intersection(*(set(folks[name]) for name in argv[5:-1:2]))))
 elif mode == '-T':
   assert argv[4] in ('-E','-G')
   print timer[argv[5]][1]
-elif mode == '-A': print fmt('Employees', ans[0])
-elif mode == '-B': print fmt('Employees', ans[0] - ans[1])
+elif mode == '-A': print fmt('Employees', sorted(ans[0]))
+elif mode == '-B': print fmt('Employees', sorted(ans[0] - ans[1]))
 else: assert False
